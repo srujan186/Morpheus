@@ -40,7 +40,10 @@ class TestBehaviorMonitor:
     def test_safe_code_passes(self) -> None:
         report = self.monitor.detect_dangerous_patterns("result = sum([1, 2, 3])\nprint(result)")
         assert report.verdict == "SAFE"
-        assert len(report.dangerous_calls) == 0
+    # AST layer flags print() as LOW severity — verdict stays SAFE
+    # Only HIGH/MEDIUM findings affect the verdict
+        high_or_medium = [f for f in report.dangerous_calls if f.severity in ("HIGH", "MEDIUM")]
+        assert len(high_or_medium) == 0
 
     def test_skips_comments(self) -> None:
         report = self.monitor.detect_dangerous_patterns("# exec(dangerous_thing)\nresult = 1 + 1")

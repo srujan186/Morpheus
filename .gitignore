@@ -1,5 +1,8 @@
 .vscode/
 __pycache__/
 *.pyc
+.venv/
+.idea/
+.pytest_cache/
 .env
 venv/
