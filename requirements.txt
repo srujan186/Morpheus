@@ -5,14 +5,14 @@ pydantic==2.5.0
 python-multipart==0.0.6
 
 # LangChain & AI
-langchain==0.1.0
-langchain-community==0.0.10
-langchain-core==0.1.10
+# NOTE: Pinned to 0.2.x — langchain 1.x removed AgentExecutor from langchain.agents
+langchain==0.2.16
+langchain-community==0.2.19
+langchain-core==0.2.43
 
-# LLM Providers (Free options)
-# Uncomment the one you'll use:
-# groq==0.4.0              # Free cloud LLM
-# ollama==0.1.6            # Local LLM
+# LLM Providers
+langchain-google-genai==1.0.10  # Gemini via Google AI Studio (compatible with core 0.2.x)
+# ollama>=0.1.6            # Local LLM (uncomment if using Ollama)
 
 # Docker for Sandbox
 docker==7.0.0
