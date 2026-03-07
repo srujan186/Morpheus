@@ -1,0 +1,29 @@
+{
+  "morpheus_report": {
+    "version": "1.0",
+    "scan_id": "cc731c51",
+    "timestamp": "2026-03-08T02:44:54.068975",
+    "agent_analyzed": "ScannedAgent",
+    "summary": {
+      "overall_risk": "SAFE",
+      "total_tools_scanned": 0,
+      "vulnerable_tools": 0,
+      "safe_tools": 0,
+      "severity_breakdown": {
+        "CRITICAL": 0,
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 0,
+        "SAFE": 0
+      },
+      "recommendation": "CLEARED FOR DEPLOYMENT. No significant vulnerabilities detected."
+    },
+    "vulnerabilities": [],
+    "metadata": {
+      "analyzer_version": "morpheus-1.0",
+      "models_used": [
+        "llama3-70b-8192"
+      ]
+    }
+  }
+}
