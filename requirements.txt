@@ -1,0 +1,29 @@
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+python-multipart==0.0.6
+
+# LangChain & AI
+langchain==0.1.0
+langchain-community==0.0.10
+langchain-core==0.1.10
+
+# LLM Providers (Free options)
+# Uncomment the one you'll use:
+# groq==0.4.0              # Free cloud LLM
+# ollama==0.1.6            # Local LLM
+
+# Docker for Sandbox
+docker==7.0.0
+
+# Utilities
+python-dotenv==1.0.0
+requests==2.31.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Code Analysis
+ast-comments==1.2.0
