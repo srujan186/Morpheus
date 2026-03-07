@@ -12,13 +12,15 @@ logger = logging.getLogger(__name__)
 
 class SandboxManager:
     def __init__(self) -> None:
+        self.is_available = False
         try:
             import docker  # type: ignore[import-untyped]
             self.client = docker.from_env()
+            self.is_available = True
             logger.info("Docker client initialized successfully.")
         except Exception as e:
-            logger.error("Failed to connect to Docker daemon: %s", e)
-            raise
+            logger.warning("Docker daemon not available. Sandbox execution will be bypassed. Error: %s", e)
+            self.client = None
 
     def create_sandbox(self) -> Any:
         """
@@ -26,6 +28,9 @@ class SandboxManager:
         - No network access
         - Limited memory and CPU
         """
+        if not self.is_available:
+            raise RuntimeError("Docker is not available.")
+        
         import docker  # type: ignore[import-untyped]
         container_name = f"morpheus_sandbox_{uuid.uuid4().hex[:8]}"
 

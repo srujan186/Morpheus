@@ -1,9 +1,9 @@
 import json
 import uuid
 import os
-from ..llm_analyzer.pattern_detector import PatternDetector
-from ..llm_analyzer.semantic_checker import SemanticChecker
-from ..llm_analyzer.explainer import VulnerabilityExplainer
+from llm_analyzer.pattern_detector import PatternDetector
+from llm_analyzer.semantic_checker import SemanticChecker
+from llm_analyzer.explainer import VulnerabilityExplainer
 from .recommendations import RecommendationEngine
 from .templates.json_template import build_json_report
 from .templates.txt_template import save_txt_report

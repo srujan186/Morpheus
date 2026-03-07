@@ -33,14 +33,14 @@ except ImportError:
     SANDBOX_READY = False
 
 try:
-    from llm_analyzer.semantic_checker import LLMAnalyzer
+    from llm_analyzer.semantic_checker import SemanticChecker
     LLM_ANALYZER_READY = True
 except ImportError:
     from integration_contracts import mock_llm_analyzer
     LLM_ANALYZER_READY = False
 
 try:
-    from report_generator.generator import ReportGenerator
+    from report_generator.generator import MorpheusReportGenerator
     REPORT_GENERATOR_READY = True
 except ImportError:
     from integration_contracts import mock_report_generator
@@ -160,16 +160,36 @@ class MorpheusOrchestrator:
     def _run_adversarial_tests(self, dependencies: List[Dict]) -> List[Dict[str, Any]]:
         """Step 3: Test with poisoned inputs."""
         if ADVERSARIAL_TESTER_READY:
-            tester = AdversarialTester()
-            return tester.test_all(dependencies)
+            tester = AdversarialTester(dependencies)
+            return tester.run()
         logger.warning("⚠️  Using mock adversarial tester")
         return mock_adversarial_tester(dependencies)
 
     def _enrich_with_llm(self, vulnerabilities: List[Dict]) -> List[Dict[str, Any]]:
-        """Step 4: Add LLM analysis."""
+        """Step 4: Add LLM semantic analysis.
+
+        SemanticChecker.analyze_multiple() takes [{name, code}] and returns
+        per-tool verdicts. We merge those verdicts back onto the vulnerability
+        list so downstream steps keep the full picture.
+        """
         if LLM_ANALYZER_READY:
-            analyzer = LLMAnalyzer()
-            return analyzer.enrich(vulnerabilities)
+            analyzer = SemanticChecker()
+            # Build the tool list from vulnerability entries (code may be absent – safe fallback)
+            tools = [
+                {"name": v.get("tool", "unknown"), "code": v.get("function_code", "")}
+                for v in vulnerabilities
+            ]
+            if tools:
+                semantic_results = analyzer.analyze_multiple(tools)
+                # Merge semantic result into matching vuln dict by tool name
+                sem_by_name = {r.get("tool_name"): r for r in semantic_results}
+                for vuln in vulnerabilities:
+                    sem = sem_by_name.get(vuln.get("tool", ""))
+                    if sem:
+                        vuln.setdefault("llm_explanation", sem.get("brief_summary", ""))
+                        vuln.setdefault("attack_vector", sem.get("attack_vector", ""))
+                        vuln.setdefault("confidence", sem.get("confidence", ""))
+            return vulnerabilities
         logger.warning("⚠️  Using mock LLM analyzer")
         return mock_llm_analyzer(vulnerabilities)
 
@@ -181,8 +201,26 @@ class MorpheusOrchestrator:
     ) -> Dict[str, Any]:
         """Step 5: Create final report."""
         if REPORT_GENERATOR_READY:
-            generator = ReportGenerator()
-            return generator.create(scan_id, dependencies, vulnerabilities)
+            generator = MorpheusReportGenerator()
+            
+            # Convert dependencies to the format run_full_analysis expects
+            tools = []
+            for dep in dependencies:
+                tools.append({
+                    "name": dep.get("name", "unknown"),
+                    "code": dep.get("function_code", "")
+                })
+            
+            # Call the actual method from generator.py
+            report = generator.run_full_analysis(
+                tools=tools,
+                agent_name="ScannedAgent",
+                scan_id=scan_id,
+                output_dir="outputs"
+            )
+            
+            return report
+        
         logger.warning("⚠️  Using mock report generator")
         return mock_report_generator(dependencies, vulnerabilities)
 

@@ -83,26 +83,114 @@ def _print_report(report: dict) -> None:
 # Command handlers
 # ---------------------------------------------------------------------------
 
-def cmd_scan(args: argparse.Namespace) -> None:
-    """Run a security scan on an agent file."""
+def cmd_scan(args):
+    """Scan an AI agent for vulnerabilities."""
     from api.orchestrator import get_orchestrator
-
-    print(f"\n🔍 MORPHEUS — Scanning: {args.agent_file}\n")
-    agent = _load_agent(args.agent_file)
+    
+    agent_path = args.agent_file
+    
+    print(f"\n🔍 MORPHEUS — Scanning: {agent_path}\n")
+    
+    # Load the agent
+    agent = _load_agent(agent_path)
+    if not agent:
+        print(f"❌ Failed to load agent from {agent_path}")
+        return
+    
+    # Run the scan
     orchestrator = get_orchestrator()
-
     scan_id = orchestrator.start_scan(agent)
+    
+    # Wait for completion (in real app, this would be async polling)
+    import time
+    max_wait = 300  # 5 minutes timeout
+    waited = 0
+    
+    while waited < max_wait:
+        status = orchestrator.get_scan_status(scan_id)
+        
+        if status.get("status") == "complete":
+            break
+        elif status.get("status") == "failed":
+            print(f"❌ Scan failed: {status.get('error')}")
+            return
+        
+        time.sleep(1)
+        waited += 1
+    
+    # Display results
     status = orchestrator.get_scan_status(scan_id)
-
+    
     print(f"\n📋 Scan ID : {scan_id}")
-    print(f"   Status  : {status['status']}")
-    print(f"   Progress: {status['progress']}%")
-
-    if status["status"] == "complete":
+    print(f"   Status  : {status.get('status')}")
+    print(f"   Progress: {status.get('progress')}%")
+    
+    if status.get("status") == "complete":
         report = orchestrator.get_scan_report(scan_id)
-        _print_report(report)
-    elif status["status"] == "failed":
-        print(f"\n❌ Scan failed: {status.get('error', 'Unknown error')}")
+        
+        # Navigate Person B's actual report structure
+        morpheus_data = report.get("morpheus_report", {})
+        summary = morpheus_data.get("summary", {})
+        vulnerabilities = morpheus_data.get("vulnerabilities", [])
+        severity_breakdown = summary.get("severity_breakdown", {})
+        
+        print("\n" + "=" * 60)
+        print("  MORPHEUS SECURITY SCAN REPORT")
+        print("=" * 60)
+        print(f"  Scan ID      : {morpheus_data.get('scan_id', scan_id)}")
+        print(f"  Timestamp    : {morpheus_data.get('timestamp', 'N/A')}")
+        print(f"  Agent        : {morpheus_data.get('agent_analyzed', 'N/A')}")
+        print(f"  Tools Scanned: {summary.get('total_tools_scanned', 0)}")
+        print(f"  Vulnerable   : {summary.get('vulnerable_tools', 0)}")
+        print(f"  Safe         : {summary.get('safe_tools', 0)}")
+        print(f"  Critical     : {severity_breakdown.get('CRITICAL', 0)}")
+        print(f"  High         : {severity_breakdown.get('HIGH', 0)}")
+        print(f"  Medium       : {severity_breakdown.get('MEDIUM', 0)}")
+        print(f"  Low          : {severity_breakdown.get('LOW', 0)}")
+        print(f"  Overall Risk : {summary.get('overall_risk', 'N/A')}")
+        print("=" * 60)
+        print(f"\n💡 {summary.get('recommendation', 'Review findings and apply fixes.')}")
+        
+        # Show vulnerabilities with proper details
+        if vulnerabilities:
+            print("\n🔴 Vulnerabilities Found:\n")
+            for i, vuln in enumerate(vulnerabilities, 1):
+                tool_name = vuln.get("tool", "Unknown")
+                severity = vuln.get("severity", "UNKNOWN")
+                vuln_type = vuln.get("type", "Unknown Type")
+                confidence = vuln.get("confidence", "UNKNOWN")
+                
+                print(f"  [{i}] {tool_name} - {severity} ({confidence} confidence)")
+                print(f"      Type: {vuln_type}")
+                
+                # Show layman explanation (easier to understand)
+                layman = vuln.get("layman_explanation", "")
+                if layman:
+                    # Wrap text at 60 chars
+                    wrapped = layman[:200] + "..." if len(layman) > 200 else layman
+                    print(f"      → {wrapped}")
+                
+                # Show business impact
+                impact = vuln.get("business_impact", "")
+                if impact and i <= 2:  # Only show for first 2 vulns
+                    wrapped_impact = impact[:150] + "..." if len(impact) > 150 else impact
+                    print(f"      💼 Impact: {wrapped_impact}")
+                
+                print()
+        else:
+            print("\n✅ No vulnerabilities found!\n")
+        
+        # Show report files
+        print("=" * 60)
+        print("📄 Detailed reports saved to:")
+        print(f"   • Text:  outputs/morpheus_report_{scan_id}.txt")
+        print(f"   • JSON:  outputs/morpheus_report_{scan_id}.json")
+        print("\n💡 View detailed report:")
+        print(f"   type outputs\\morpheus_report_{scan_id}.txt")
+        print("=" * 60)
+
+    elif status.get("status") == "failed":
+        print(f"\n❌ Scan failed: {status.get('error')}")
 
 
 def cmd_status(args: argparse.Namespace) -> None:

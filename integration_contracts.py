@@ -146,34 +146,34 @@ def mock_report_generator(dependencies: List[Dict], vulnerabilities: List[Dict])
 def get_component_status() -> Dict[str, str]:
     """Check which components are real vs mock"""
     try:
-        from morpheus.agent_analyzer.discover import AgentAnalyzer
+        from agent_analyzer.discover import AgentAnalyzer
         agent_analyzer_status = "✅ REAL"
-    except ImportError:
-        agent_analyzer_status = "🔄 MOCK"
+    except ImportError as e:
+        agent_analyzer_status = f"🔄 MOCK ({e})"
     
     try:
-        from morpheus.adversarial_tester.poison import AdversarialTester
+        from adversarial_tester.poison import AdversarialTester
         adversarial_status = "✅ REAL"
-    except ImportError:
-        adversarial_status = "🔄 MOCK"
+    except ImportError as e:
+        adversarial_status = f"🔄 MOCK ({e})"
     
     try:
-        from morpheus.sandbox.executor import SandboxExecutor
+        from sandbox.executor import SandboxExecutor
         sandbox_status = "✅ REAL"
-    except ImportError:
-        sandbox_status = "🔄 MOCK"
+    except ImportError as e:
+        sandbox_status = f"🔄 MOCK ({e})"
     
     try:
-        from morpheus.llm_analyzer.semantic_checker import LLMAnalyzer
+        from llm_analyzer.semantic_checker import SemanticChecker
         llm_status = "✅ REAL"
-    except ImportError:
-        llm_status = "🔄 MOCK"
+    except ImportError as e:
+        llm_status = f"🔄 MOCK ({e})"
     
     try:
-        from morpheus.report_generator.generator import ReportGenerator
+        from report_generator.generator import MorpheusReportGenerator
         report_status = "✅ REAL"
-    except ImportError:
-        report_status = "🔄 MOCK"
+    except ImportError as e:
+        report_status = f"🔄 MOCK ({e})"
     
     return {
         "Agent Analyzer (You)": agent_analyzer_status,

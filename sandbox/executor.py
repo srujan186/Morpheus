@@ -50,6 +50,11 @@ def execute_safely(tool_code: str, timeout: int = 5) -> Dict[str, Any]:
         result["summary"] = str(result["summary"]) + " | Execution skipped due to HIGH severity findings."
         return result
 
+    if not sandbox_manager.is_available:
+        logger.warning("Docker sandbox unavailable. Skipping dynamic execution.")
+        result["summary"] = str(result["summary"]) + " | Execution skipped (Docker unavailable)."
+        return result
+
     logger.info("Creating sandbox container...")
     container = sandbox_manager.create_sandbox()
 
@@ -101,3 +106,33 @@ def execute_safely(tool_code: str, timeout: int = 5) -> Dict[str, Any]:
 
     logger.info("Execution complete. Verdict: %s", result["verdict"])
     return result
+
+
+class SandboxExecutor:
+    """
+    Class wrapper around execute_safely() so the orchestrator can import it
+    as `from sandbox.executor import SandboxExecutor`.
+    """
+
+    def test_tools(self, dependencies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Run each tool in the dependency list through the sandbox.
+        Returns a list of result dicts, one per tool.
+        """
+        results = []
+        for dep in dependencies:
+            tool_name = dep.get("name", "unknown")
+            tool_code = dep.get("function_code", "")
+            if not tool_code:
+                results.append({
+                    "tool": tool_name,
+                    "executed": False,
+                    "verdict": "SKIPPED",
+                    "summary": "No source code available",
+                })
+                continue
+            logger.info("[SandboxExecutor] Testing tool: %s", tool_name)
+            result = execute_safely(tool_code)
+            result["tool"] = tool_name
+            results.append(result)
+        return results

@@ -1,5 +1,6 @@
 import json
-from ..llm_analyzer.groq_client import GroqClient
+from typing import List, Dict, Any
+from llm_analyzer.groq_client import GroqClient
 
 FIX_GENERATOR_PROMPT = """You are a Python security expert who writes secure code fixes.
 Respond ONLY in this exact JSON format:

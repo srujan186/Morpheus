@@ -4,7 +4,7 @@ load_dotenv()
 
 from groq import Groq
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY2")
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
 class GroqClient:
