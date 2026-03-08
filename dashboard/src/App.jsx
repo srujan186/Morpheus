@@ -147,7 +147,7 @@ function DependencyGraph({ dependencies }) {
             <text x={pos.x} y={pos.y}
               textAnchor="middle" dominantBaseline="middle"
               fill="white" fontSize="11" fontWeight="700"
-              fontFamily="'JetBrains Mono', monospace"
+              fontFamily="'Space Mono', monospace"
               letterSpacing="0.5">
               {node}
             </text>
@@ -191,31 +191,68 @@ export default function App() {
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `scan-report-${report.scan_id}.json`;
+    a.download = `morpheus-report-${report.scan_id}.json`;
     a.click();
   };
 
   const downloadCSV = () => {
     if (!report) return;
-    const rows = report.vulnerabilities.map(v => `${v.id},${v.severity},"${v.title}","${v.description}"`).join("\n");
+    const rows = report.vulnerabilities
+      .map((v) => `${v.id},${v.severity},"${v.title}","${v.description}"`)
+      .join("\n");
     const blob = new Blob(["ID,Severity,Title,Description\n" + rows], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `scan-report-${report.scan_id}.csv`;
+    a.download = `morpheus-report-${report.scan_id}.csv`;
+    a.click();
+  };
+
+  const downloadTXT = () => {
+    if (!report) return;
+    const lines = [
+      `MORPHEUS SECURITY SCAN REPORT`,
+      `==============================`,
+      `Scan ID: ${report.scan_id}`,
+      `Date: ${new Date().toLocaleString()}`,
+      `Total Vulnerabilities: ${report.summary.total}`,
+      ``,
+      `SUMMARY`,
+      `-------`,
+      `High:   ${report.summary.high}`,
+      `Medium: ${report.summary.medium}`,
+      `Low:    ${report.summary.low}`,
+      ``,
+      `VULNERABILITIES`,
+      `---------------`,
+      ...report.vulnerabilities.map((v, i) =>
+        [
+          ``,
+          `${i + 1}. ${v.title}`,
+          `   Severity:    ${v.severity}`,
+          `   Description: ${v.description}`,
+          `   Vulnerable:  ${v.fix_before}`,
+          `   Fixed:       ${v.fix_after}`
+        ].join("\n")
+      )
+    ].join("\n");
+
+    const blob = new Blob([lines], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `morpheus-report-${report.scan_id}.txt`;
     a.click();
   };
 
   return (
     <div className="app">
-      {/* Background */}
       <div className="bg-grid"></div>
       <div className="bg-glow"></div>
 
-      {/* Top Nav */}
+      {/* Navbar */}
       <nav className="navbar">
         <div className="nav-brand">
           <span className="nav-icon">⬡</span>
-          <span className="nav-title">AgentGuard</span>
+          <span className="nav-title">Morpheus</span>
           <span className="nav-version">v1.0</span>
         </div>
         <div className="nav-status">
@@ -225,9 +262,9 @@ export default function App() {
       </nav>
 
       <main className="main">
-        {/* Hero Header */}
+        {/* Hero */}
         <header className="hero">
-          <div className="hero-tag">AI SECURITY PLATFORM</div>
+          <div className="hero-tag">AI SUPPLY CHAIN SECURITY PLATFORM</div>
           <h1 className="hero-title">
             Agent Security<br />
             <span className="hero-accent">Scanner</span>
@@ -237,14 +274,13 @@ export default function App() {
           </p>
         </header>
 
-        {/* Scanner Card */}
+        {/* Scanner */}
         <section className="card scanner-card">
           <div className="card-header">
             <h2 className="card-title">
               <span className="card-icon">◈</span> Security Scanner
             </h2>
           </div>
-
           <div className="scanner-body">
             <button
               className={`scan-btn ${status === "scanning" ? "scanning" : ""}`}
@@ -265,8 +301,10 @@ export default function App() {
                   <span className="progress-pct">{Math.min(progress, 100)}%</span>
                 </div>
                 <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${Math.min(progress, 100)}%` }}></div>
-                  <div className="progress-glow" style={{ left: `${Math.min(progress, 100)}%` }}></div>
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${Math.min(progress, 100)}%` }}
+                  ></div>
                 </div>
               </div>
             )}
@@ -287,28 +325,38 @@ export default function App() {
             {/* Summary */}
             <section className="card">
               <div className="card-header">
-                <h2 className="card-title"><span className="card-icon">◈</span> Threat Summary</h2>
+                <h2 className="card-title">
+                  <span className="card-icon">◈</span> Threat Summary
+                </h2>
               </div>
               <div className="summary-grid">
                 <div className="summary-item summary-high">
                   <div className="summary-num">{report.summary.high}</div>
                   <div className="summary-label">CRITICAL</div>
-                  <div className="summary-bar"><div className="summary-bar-fill" style={{ width: `${(report.summary.high / report.summary.total) * 100}%`, background: '#ff4757' }}></div></div>
+                  <div className="summary-bar">
+                    <div className="summary-bar-fill" style={{ width: `${(report.summary.high / report.summary.total) * 100}%`, background: '#ff4757' }}></div>
+                  </div>
                 </div>
                 <div className="summary-item summary-medium">
                   <div className="summary-num">{report.summary.medium}</div>
                   <div className="summary-label">MEDIUM</div>
-                  <div className="summary-bar"><div className="summary-bar-fill" style={{ width: `${(report.summary.medium / report.summary.total) * 100}%`, background: '#ffa502' }}></div></div>
+                  <div className="summary-bar">
+                    <div className="summary-bar-fill" style={{ width: `${(report.summary.medium / report.summary.total) * 100}%`, background: '#ffa502' }}></div>
+                  </div>
                 </div>
                 <div className="summary-item summary-low">
                   <div className="summary-num">{report.summary.low}</div>
                   <div className="summary-label">LOW</div>
-                  <div className="summary-bar"><div className="summary-bar-fill" style={{ width: `${(report.summary.low / report.summary.total) * 100}%`, background: '#2ed573' }}></div></div>
+                  <div className="summary-bar">
+                    <div className="summary-bar-fill" style={{ width: `${(report.summary.low / report.summary.total) * 100}%`, background: '#2ed573' }}></div>
+                  </div>
                 </div>
                 <div className="summary-item summary-total">
                   <div className="summary-num">{report.summary.total}</div>
                   <div className="summary-label">TOTAL</div>
-                  <div className="summary-bar"><div className="summary-bar-fill" style={{ width: '100%', background: '#00d4ff' }}></div></div>
+                  <div className="summary-bar">
+                    <div className="summary-bar-fill" style={{ width: '100%', background: '#00d4ff' }}></div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -330,7 +378,9 @@ export default function App() {
             {activeTab === "vulns" && (
               <section className="card">
                 <div className="card-header">
-                  <h2 className="card-title"><span className="card-icon">◈</span> Vulnerabilities Detected</h2>
+                  <h2 className="card-title">
+                    <span className="card-icon">◈</span> Vulnerabilities Detected
+                  </h2>
                   <span className="count-badge">{report.vulnerabilities.length}</span>
                 </div>
                 <div className="vuln-list">
@@ -345,7 +395,9 @@ export default function App() {
             {activeTab === "fixes" && (
               <section className="card">
                 <div className="card-header">
-                  <h2 className="card-title"><span className="card-icon">◈</span> Recommended Fixes</h2>
+                  <h2 className="card-title">
+                    <span className="card-icon">◈</span> Recommended Fixes
+                  </h2>
                 </div>
                 <div className="fixes-list">
                   {report.vulnerabilities.map((vuln) => (
@@ -371,7 +423,9 @@ export default function App() {
             {activeTab === "graph" && (
               <section className="card">
                 <div className="card-header">
-                  <h2 className="card-title"><span className="card-icon">◈</span> Dependency Graph</h2>
+                  <h2 className="card-title">
+                    <span className="card-icon">◈</span> Dependency Graph
+                  </h2>
                 </div>
                 <DependencyGraph dependencies={report.dependencies} />
               </section>
@@ -380,7 +434,9 @@ export default function App() {
             {/* Export */}
             <section className="card export-card">
               <div className="card-header">
-                <h2 className="card-title"><span className="card-icon">◈</span> Export Report</h2>
+                <h2 className="card-title">
+                  <span className="card-icon">◈</span> Export Report
+                </h2>
               </div>
               <div className="export-btns">
                 <button className="export-btn export-json" onClick={downloadJSON}>
@@ -388,6 +444,9 @@ export default function App() {
                 </button>
                 <button className="export-btn export-csv" onClick={downloadCSV}>
                   <span>⬇</span> Download CSV
+                </button>
+                <button className="export-btn export-txt" onClick={downloadTXT}>
+                  <span>⬇</span> Download TXT
                 </button>
               </div>
             </section>
